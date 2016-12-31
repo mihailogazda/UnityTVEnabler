@@ -1,0 +1,101 @@
+UnityAppController.mm
+
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
+{
+	::printf("-> applicationDidFinishLaunching()\n");
+
+	// send notfications
+#if !UNITY_TVOS
+	if(UILocalNotification* notification = [launchOptions objectForKey:UIApplicationLaunchOptionsLocalNotificationKey])
+		UnitySendLocalNotification(notification);
+
+	if(NSDictionary* notification = [launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey])
+		UnitySendRemoteNotification(notification);
+
+	if ([UIDevice currentDevice].generatesDeviceOrientationNotifications == NO)
+		[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+#endif
+    
+    /*
+    NSString* currentDir = [[NSBundle mainBundle] bundlePath];
+    NSLog(@"Detected working path: %@", currentDir);
+    NSString* newDir = [currentDir stringByAppendingString:@"/Data2/"];
+
+	UnityInitApplicationNoGraphics([newDir UTF8String]);
+
+	[self selectRenderingAPI];
+	[UnityRenderingView InitializeForAPI:self.renderingAPI];
+
+	_window			= [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+	_unityView		= [self createUnityView];
+
+	[DisplayManager Initialize];
+	_mainDisplay	= [DisplayManager Instance].mainDisplay;
+	[_mainDisplay createWithWindow:_window andView:_unityView];
+
+	[self createUI];
+	[self preStartUnity];
+
+	// if you wont use keyboard you may comment it out at save some memory
+	[KeyboardDelegate Initialize];
+
+     */
+    
+    _window			= [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    
+    [[TVEnabler shared] startWith: _window andAppControler:self];
+    
+	return YES;
+}
+
+bool isReady = false;
+
+- (void) TVEnablerInitializeUnity:(NSString *)path
+{
+    NSLog(@"TVEnabler completed work. Booting Unity.");
+    isReady = true;
+    
+    UnityInitApplicationNoGraphics([path UTF8String]);
+    
+    [self selectRenderingAPI];
+    [UnityRenderingView InitializeForAPI:self.renderingAPI];
+    
+    _unityView		= [self createUnityView];
+    
+    [DisplayManager Initialize];
+    _mainDisplay	= [DisplayManager Instance].mainDisplay;
+    [_mainDisplay createWithWindow:_window andView:_unityView];
+    
+    [self createUI];
+    [self preStartUnity];
+    
+    // if you wont use keyboard you may comment it out at save some memory
+    [KeyboardDelegate Initialize];
+    
+    [self applicationDidBecomeActive:[UIApplication sharedApplication]];
+}
+
+- (void)applicationDidBecomeActive:(UIApplication*)application
+{
+	::printf("-> applicationDidBecomeActive()\n");
+    if (!isReady) return; // <-- HERE
+    
+	[self removeSnapshotView];
+
+	if(_unityAppReady)
+	{
+		if(UnityIsPaused() && _wasPausedExternal == false)
+		{
+			UnityWillResume();
+			UnityPause(0);
+		}
+		UnitySetPlayerFocus(1);
+	}
+	else if(!_startUnityScheduled)
+	{
+		_startUnityScheduled = true;
+		[self performSelector:@selector(startUnity:) withObject:application afterDelay:0];
+	}
+
+	_didResignActive = false;
+}
