@@ -1,3 +1,11 @@
+# DONT_USE_NOTES
+
+This was a hacky attempt (it did work) to boot Unity inside the tvOS app, before Unity added TVOS platform itself. 
+Since original apps had hard file size limitations, this approach would allow you to avoid asset bundles, and just download the whole game as a package, when done boot the Unity Engine. 
+
+Makes little sense to use anymore.
+
+# ORIGINAL NOTES
 UnityAppController.mm patch
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
